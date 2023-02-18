@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import "./style.css";
 import supabase from "./supabase";
 
-// supbase pwd: juFP1pAeNjOYrlSF
-
 const initialFacts = [
   {
     id: 1,
@@ -76,7 +74,11 @@ function App() {
       )}
       <main className="main">
         <CategoryFilter setCurrentCategory={setCurrentCategory} />
-        {isLoading ? <Loader /> : <FactList facts={facts} />}
+        {isLoading ? (
+          <Loader />
+        ) : (
+          <FactList facts={facts} setFacts={setFacts} />
+        )}
       </main>
     </>
   );
@@ -159,7 +161,7 @@ function NewFactForm({ setIsShowForm, setFacts }) {
       */
 
       // 4. Add the new fact to the UI: add the fact to state
-      setFacts((facts) => [newFact[0], ...facts]);
+      if (!error) setFacts((facts) => [newFact[0], ...facts]);
 
       // 5. Reset input fields
       setText("");
@@ -237,7 +239,7 @@ function CategoryFilter({ setCurrentCategory }) {
   );
 }
 
-function FactList({ facts }) {
+function FactList({ facts, setFacts }) {
   if (facts.length === 0) {
     return (
       <p className="message">
@@ -246,7 +248,9 @@ function FactList({ facts }) {
     );
   }
 
-  const factsList = facts.map((fact) => <Fact key={fact.id} factObj={fact} />);
+  const factsList = facts.map((fact) => (
+    <Fact key={fact.id} factObj={fact} setFacts={setFacts} />
+  ));
   return (
     <section>
       <ul className="facts-list">{factsList}</ul>
@@ -255,7 +259,24 @@ function FactList({ facts }) {
   );
 }
 
-function Fact({ factObj }) {
+function Fact({ factObj, setFacts }) {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  async function handleVote(columnName) {
+    setIsUpdating(true);
+    const { data: updatedFact, error } = await supabase
+      .from("facts")
+      .update({ [columnName]: factObj[columnName] + 1 })
+      .eq("id", factObj.id)
+      .select();
+    setIsUpdating(false);
+
+    if (!error)
+      setFacts((facts) =>
+        facts.map((f) => (f.id === factObj.id ? updatedFact[0] : f))
+      );
+  }
+
   return (
     <li className="fact">
       <p>
@@ -280,13 +301,20 @@ function Fact({ factObj }) {
         {factObj.category}
       </span>
       <div className="vote-buttons">
-        <button>
+        <button
+          onClick={() => handleVote("votesInteresting")}
+          disabled={isUpdating}
+        >
           👍 <strong>{factObj.votesInteresting}</strong>
         </button>
-        <button>
+
+        <button
+          onClick={() => handleVote("votesMindblowing")}
+          disabled={isUpdating}
+        >
           🤯 <strong>{factObj.votesMindblowing}</strong>
         </button>
-        <button>
+        <button onClick={() => handleVote("votesFalse")} disabled={isUpdating}>
           ⛔️ <strong>{factObj.votesFalse}</strong>
         </button>
       </div>
