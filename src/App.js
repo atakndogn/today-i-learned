@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./style.css";
 import supabase from "./supabase";
 
+/*
 const initialFacts = [
   {
     id: 1,
@@ -35,6 +36,7 @@ const initialFacts = [
     createdIn: 2015,
   },
 ];
+*/
 
 function App() {
   const [isShowForm, setIsShowForm] = useState(false);
